@@ -26,13 +26,13 @@ namespace NS_COMPILER_MODULE
             else if(pid == 0)
             {
                 // child
-                int _stderr = open(PathUtil::Stderr(_file).c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
-                if(_stderr < 0)
+                int _compile_err = open(PathUtil::Compiler_Error(_file).c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+                if(_compile_err < 0)
                 {
-                    LOG(ERROR) << "没有成功形成stderr文件";
+                    LOG(ERROR) << "没有成功形成compile_error文件";
                     exit(1);
                 }
-                dup2(_stderr, 2);
+                dup2(_compile_err, 2);
 
 
                 execlp("g++",  "g++", "-O2", PathUtil::Src(_file).c_str(),
