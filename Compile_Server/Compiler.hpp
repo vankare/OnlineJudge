@@ -10,7 +10,7 @@
 
 namespace NS_COMPILER_MODULE
 {
-    using namespace NS_UTIL_MODUL;
+    using namespace NS_UTIL_MODULE;
     using namespace NS_LOGGER_MODULE;
     class Compiler
     {

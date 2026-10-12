@@ -87,7 +87,7 @@ namespace NS_LOGGER_MODULE
                 ,_line(std::to_string(line))
                 ,_logger(logger)
             {
-                _time = NS_UTIL_MODUL::TimeUtil::GetDateTime();
+                _time = NS_UTIL_MODULE::TimeUtil::GetDateTime();
                 std::stringstream ss;
                 ss << "[" + _level + "]"
                    << "[" + _file  + "]"

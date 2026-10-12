@@ -10,7 +10,7 @@
 namespace NS_RUNNER__MODULE
 {
     using namespace NS_LOGGER_MODULE;
-    using namespace NS_UTIL_MODUL;
+    using namespace NS_UTIL_MODULE;
     class Runner
     {
     public:

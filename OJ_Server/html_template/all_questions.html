@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的 OJ 系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 24px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f0f3f8;
+        }
+
+        th {
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            color: #5a6b7d;
+            padding: 14px 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 20px;
+            border-top: 1px solid #eef1f5;
+            font-size: 15px;
+        }
+
+        tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        tbody tr:hover {
+            background: #f9fbfd;
+        }
+
+        td a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        td a:hover {
+            text-decoration: underline;
+        }
+
+        /* 难度标签 */
+        .difficulty {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .difficulty.easy   { background: #e7f7ee; color: #16a34a; }
+        .difficulty.medium { background: #fff5e6; color: #d97706; }
+        .difficulty.hard   { background: #fdeaea; color: #dc2626; }
+
+        .empty {
+            padding: 40px;
+            text-align: center;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>题目列表</h1>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>标题</th>
+                        <th style="width: 120px;">难度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#questions}}
+                    <tr data-id="{{id}}">
+                        <td><a href="/question/{{id}}">{{id}}</a></td>
+                        <td><a href="/question/{{id}}">{{title}}</a></td>
+                        <td>
+                            <span class="difficulty {{difficultyClass}}">{{difficulty}}</span>
+                        </td>
+                    </tr>
+                    {{/questions}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tbody = document.querySelector('tbody');
+            if (!tbody) return;
+
+            var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+
+            rows.sort(function (a, b) {
+                var idA = a.getAttribute('data-id');
+                var idB = b.getAttribute('data-id');
+
+                var numA = Number(idA);
+                var numB = Number(idB);
+
+                // 如果 id 是纯数字，按数字大小升序
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+
+                // 否则按字符串升序（支持数字混合）
+                return String(idA).localeCompare(String(idB), undefined, { numeric: true });
+            });
+
+            rows.forEach(function (row) {
+                tbody.appendChild(row);
+            });
+        });
+    </script>
+</body>
+</html>

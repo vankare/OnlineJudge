@@ -1,28 +1,38 @@
 #include  "Compile_Run.hpp"
-#include <jsoncpp/json/value.h>
-#include <jsoncpp/json/writer.h>
+#include "../Comm/httplib.h"
 #include <string>
-#include <jsoncpp/json/json.h>
 
 using namespace NS_COMPILE_AND_RUN_MODULE;
+using namespace httplib;
 
-
-int main()
+void Usage(std::string proc)
 {
-    std::string code;
-    FileUtil::ReadFile(PathUtil::Src("code"), &code);
+    std::cerr << "Usage:\n\t" << proc << "\tprot\n";
+}
 
-    Json::Value root;
-    root["code"] = code;
-    root["cpu_limit"] = 1;
-    root["mem_limit"] = 50;
+int main(int argc, char *argv[])
+{
+    if(argc != 2)
+    {
+        Usage(argv[0]);
+        return 1;
+    }
 
-    Json::StyledWriter writer;
-    std::string in_json = writer.write(root);
+    Server svr;
 
-    std::string out_json;
-    CompileAndRun::Start(in_json, &out_json);
+    svr.Post("/compile_and_run", 
+        [](const Request& req, Response& rep)
+        {
+            std::string in_json = req.body;
+            std::string out_json;
+            if(!in_json.empty())
+            {
+                CompileAndRun::Start(in_json, &out_json);
+                rep.set_content(out_json, "application/json;charset=utf-8");
+            }
+        });
 
-    std::cout << out_json << std::endl;
+    svr.listen("0.0.0.0", std::stoi(argv[1]));
+
     return 0;
 }

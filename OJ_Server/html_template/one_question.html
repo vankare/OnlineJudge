@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{document}}</title>
+
+    <!-- Ace 编辑器核心 + C++ 模式 + 自动补全 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/mode-c_cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ext-language_tools.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+
+        /* ============ 布局 ============ */
+        .layout {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        /* 左侧：题目 */
+        .left {
+            flex: 1 1 50%;
+            min-width: 0;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            padding: 28px 30px;
+        }
+
+        /* 右侧：编辑器 + 输入 + 提交 */
+        .right {
+            flex: 1 1 50%;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .panel-head {
+            flex: 0 0 auto;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #64748b;
+            background: #f0f3f8;
+            border-bottom: 1px solid #eef1f5;
+        }
+
+        /* 代码编辑区：Ace 容器撑满 */
+        .editor-panel {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #code-editor {
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        /* 自定义输入区 */
+        .input-panel {
+            flex: 0 0 140px;
+        }
+
+        .input-panel textarea {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 14px 16px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                         "Liberation Mono", monospace;
+            font-size: 14px;
+            line-height: 1.65;
+            color: #1e293b;
+            background: #fbfcfe;
+            tab-size: 4;
+        }
+
+        .input-panel textarea::placeholder {
+            color: #a8b3c2;
+        }
+
+        /* 提交按钮 */
+        .submit-btn {
+            flex: 0 0 auto;
+            padding: 13px 18px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: #fff;
+            background: #2563eb;
+            border: none;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.05s ease;
+        }
+
+        .submit-btn:hover:not(:disabled) { background: #1d4ed8; }
+        .submit-btn:active:not(:disabled) { transform: translateY(1px); }
+        .submit-btn:disabled {
+            background: #9db9f2;
+            cursor: not-allowed;
+        }
+
+        /* ============ 左侧题目样式 ============ */
+        .q-title {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 22px;
+            font-size: 22px;
+            line-height: 1.4;
+            color: #1e293b;
+        }
+
+        .q-id {
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .difficulty {
+            padding: 3px 11px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            background: #eef2f7;
+            color: #475569;
+        }
+
+        .q-desc {
+            font-size: 15px;
+            line-height: 1.85;
+            color: #334155;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .q-desc p { margin: 0 0 14px; }
+        .q-desc img { max-width: 100%; height: auto; border-radius: 6px; }
+
+        .q-desc pre {
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            background: #f6f8fa;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13.5px;
+            line-height: 1.6;
+        }
+
+        .q-desc code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.92em;
+            background: #f1f5f9;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        .q-desc pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .q-desc table {
+            border-collapse: collapse;
+            margin: 0 0 14px;
+            font-size: 14px;
+        }
+
+        .q-desc th, .q-desc td {
+            border: 1px solid #e2e8f0;
+            padding: 7px 12px;
+        }
+
+        /* ============ 弹窗 ============ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            -webkit-backdrop-filter: blur(2px);
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            width: min(660px, 100%);
+            max-height: 82vh;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+            animation: modal-pop 0.18s ease-out;
+        }
+
+        @keyframes modal-pop {
+            from { opacity: 0; transform: scale(0.96) translateY(6px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-head {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eef1f5;
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            font-size: 24px;
+            line-height: 1;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0 4px;
+            border-radius: 6px;
+            transition: color 0.15s ease, background 0.15s ease;
+        }
+
+        .modal-close:hover {
+            color: #475569;
+            background: #f1f5f9;
+        }
+
+        .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-foot {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: flex-end;
+            padding: 14px 20px;
+            border-top: 1px solid #eef1f5;
+        }
+
+        .btn-ok {
+            padding: 9px 22px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            background: #2563eb;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .btn-ok:hover { background: #1d4ed8; }
+
+        /* 结果内容 */
+        .status-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .status-badge.ok   { background: #e7f7ee; color: #16a34a; }
+        .status-badge.fail { background: #fdeaea; color: #dc2626; }
+
+        .result-block { margin-top: 18px; }
+
+        .result-label {
+            margin-bottom: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .result-text {
+            margin: 0;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #f6f8fa;
+            border: 1px solid #eef1f5;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #1e293b;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        .result-text.dark {
+            background: #0f172a;
+            border-color: #0f172a;
+            color: #e2e8f0;
+            max-height: 260px;
+            overflow: auto;
+        }
+
+        /* 隐藏的模板存储 */
+        #code-template {
+            display: none;
+        }
+
+        /* ============ 响应式 ============ */
+        @media (max-width: 860px) {
+            html, body { height: auto; overflow: auto; }
+            .layout { flex-direction: column; }
+            .left, .right { flex: none; }
+            .left { overflow: visible; }
+            .editor-panel { height: 55vh; }
+            .input-panel { height: 130px; }
+        }
+    </style>
+</head>
+<body data-question-id="{{id}}">
+
+    <div class="layout">
+
+        <!-- ========== 左侧：题目信息 ========== -->
+        <section class="left">
+            <h1 class="q-title">
+                <span class="q-id">{{id}}.</span>
+                <span>{{title}}</span>
+                <span class="difficulty">{{difficulty}}</span>
+            </h1>
+
+            <!-- 若 desc 字段本身是 HTML，请把下面改成 {{{desc}}} 以避免被转义 -->
+            <div class="q-desc">{{desc}}</div>
+        </section>
+
+        <!-- ========== 右侧：代码编辑 + 输入 + 提交 ========== -->
+        <section class="right">
+
+            <div class="panel editor-panel">
+                <div class="panel-head">代码编辑区 (C++)</div>
+                <div id="code-editor"></div>
+            </div>
+
+            <div class="panel input-panel">
+                <div class="panel-head">自定义输入</div>
+                <textarea id="custom-input" spellcheck="false"
+                          placeholder="程序运行时的标准输入（stdin），可留空…"></textarea>
+            </div>
+
+            <button id="submit-btn" class="submit-btn" type="button">提交评测</button>
+
+        </section>
+    </div>
+
+    <!-- 隐藏 textarea：存放 {{header}} 模板代码，防止被 HTML 转义破坏 -->
+    <textarea id="code-template" aria-hidden="true">{{header}}</textarea>
+
+    <!-- ========== 结果弹窗 ========== -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-head">
+                <span id="modal-title">评测结果</span>
+                <button class="modal-close" id="modal-close" type="button" aria-label="关闭">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div>
+                    <span id="modal-status" class="status-badge">status: -</span>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-label">reason（应答结果）</div>
+                    <pre id="modal-reason" class="result-text">（无）</pre>
+                </div>
+
+                <div class="result-block" id="block-stdout" style="display:none;">
+                    <div class="result-label">stdout（标准输出）</div>
+                    <pre id="out-stdout" class="result-text dark"></pre>
+                </div>
+
+                <div class="result-block" id="block-stderr" style="display:none;">
+                    <div class="result-label">stderr（标准错误）</div>
+                    <pre id="out-stderr" class="result-text dark"></pre>
+                </div>
+            </div>
+
+            <div class="modal-foot">
+                <button id="modal-ok" class="btn-ok" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var overlay     = document.getElementById('modal-overlay');
+        var inputEl     = document.getElementById('custom-input');
+        var submitBtn   = document.getElementById('submit-btn');
+        var statusBadge = document.getElementById('modal-status');
+        var reasonEl    = document.getElementById('modal-reason');
+
+        /* 题目 id：纯数字则转成 number，否则保留字符串 */
+        var rawId = document.body.getAttribute('data-question-id') || '';
+        var questionId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
+
+        /* ---------- 初始化 Ace 编辑器 ---------- */
+        var editor = ace.edit('code-editor');
+        editor.setTheme('ace/theme/monokai');
+        editor.session.setMode('ace/mode/c_cpp');
+        editor.setOptions({
+            fontSize: '14px',
+            showPrintMargin: false,
+            useWorker: false,                 // 关闭语法检查 worker，避免 CDN 跨域报错
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            enableSnippets: true,
+            tabSize: 4,
+            useSoftTabs: true
+        });
+
+        /* 从隐藏 textarea 读取模板代码填充编辑器 */
+        var templateEl = document.getElementById('code-template');
+        var templateCode = templateEl ? templateEl.value : '';
+        editor.setValue(templateCode, -1);
+        editor.clearSelection();
+        editor.moveCursorTo(0, 0);
+
+        /* ---------- 弹窗控制 ---------- */
+        function openModal() {
+            overlay.classList.add('show');
+        }
+        function closeModal() {
+            overlay.classList.remove('show');
+        }
+
+        document.getElementById('modal-close').addEventListener('click', closeModal);
+        document.getElementById('modal-ok').addEventListener('click', closeModal);
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeModal();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && overlay.classList.contains('show')) closeModal();
+        });
+
+        /* ---------- 文本填充 ---------- */
+        function fillBlock(blockId, preId, value) {
+            var block = document.getElementById(blockId);
+            var pre   = document.getElementById(preId);
+            if (value === undefined || value === null || value === '') {
+                block.style.display = 'none';
+                pre.textContent = '';
+                return;
+            }
+            block.style.display = '';
+            pre.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+        }
+
+        /* ---------- 显示结果 ---------- */
+        function showResult(data) {
+            var status = data.status;
+
+            var isOk = (status === 0 || status === 200 ||
+                        status === '0' || status === '200');
+
+            statusBadge.textContent = 'status: ' +
+                (status === undefined || status === null ? '未知' : status);
+            statusBadge.className = 'status-badge ' + (isOk ? 'ok' : 'fail');
+
+            reasonEl.textContent = (data.reason === undefined ||
+                                    data.reason === null ||
+                                    data.reason === '')
+                                    ? '（无）'
+                                    : String(data.reason);
+
+            fillBlock('block-stdout', 'out-stdout', data.stdout);
+            fillBlock('block-stderr', 'out-stderr', data.stderr);
+
+            openModal();
+        }
+
+        /* ---------- 提交评测 ---------- */
+        function submit() {
+            var code  = editor.getValue();      // 从 Ace 获取代码
+            var input = inputEl.value;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '评测中…';
+
+            fetch('/judge/' + encodeURIComponent(rawId), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id:    questionId,
+                    input: input,
+                    code:  code
+                })
+            })
+            .then(function (resp) {
+                return resp.text().then(function (text) {
+                    var data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (err) {
+                        data = {
+                            status: resp.status,
+                            reason: text || '服务器返回内容无法解析为 JSON'
+                        };
+                    }
+                    showResult(data);
+                });
+            })
+            .catch(function (err) {
+                showResult({
+                    status: -1,
+                    reason: '请求失败：' + (err && err.message ? err.message : err)
+                });
+            })
+            .finally(function () {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '提交评测';
+            });
+        }
+
+        submitBtn.addEventListener('click', submit);
+
+        /* Ctrl / Cmd + Enter 快捷提交（Ace 内部也支持） */
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!submitBtn.disabled) submit();
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

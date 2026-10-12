@@ -8,9 +8,10 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <atomic>
+#include <vector>
 
 
-namespace NS_UTIL_MODUL
+namespace NS_UTIL_MODULE
 {
     const std::string temp = "./temp/";
 
@@ -116,22 +117,24 @@ namespace NS_UTIL_MODUL
             out.close();
             return true;
         }
-        static bool ReadFile(const std::string& filename, std::string * content)
+        static std::string ReadFile(const std::string& filename)
         {
             std::ifstream in(filename, std::ios::in);
             if(!in.is_open())
             {
-                return false;
+                return "";
             }
+
+            std::string content;
             std::string line;
             while(std::getline(in, line))
             {
-                *content += line;
-                *content += "\n";
+                content += line;
+                content += "\n";
             }
             
             in.close();
-            return true;
+            return content;
         }
     };
     
@@ -149,6 +152,23 @@ namespace NS_UTIL_MODUL
             rcpu.rlim_cur = _mem_limit;
             rcpu.rlim_max = RLIM_INFINITY;
             setrlimit(RLIMIT_AS, &rmem);
+        }
+    };
+
+    class StringUtil
+    {
+    public:
+        static void Split(const std::string& str, std::vector<std::string>* vec, const std::string& sep)
+        {
+            size_t pos = str.find(sep);
+            size_t prev = 0;
+            while(pos != std::string::npos)
+            {
+                vec->push_back(str.substr(prev, pos - prev));
+                prev = pos + sep.size();
+                pos = str.find(sep, prev);
+            }
+            vec->push_back(str.substr(prev));
         }
     };
 }

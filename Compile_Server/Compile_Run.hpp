@@ -12,7 +12,7 @@
 
 namespace NS_COMPILE_AND_RUN_MODULE
 {
-    using namespace NS_UTIL_MODUL;
+    using namespace NS_UTIL_MODULE;
     using namespace NS_COMPILER_MODULE;
     using namespace NS_RUNNER__MODULE;
 
@@ -55,10 +55,10 @@ namespace NS_COMPILE_AND_RUN_MODULE
                     desc = "用户提交代码为空";
                     break;
                 case -3:
-                    FileUtil::ReadFile(PathUtil::Compiler_Error(file_name), &desc);
+                    desc = FileUtil::ReadFile(PathUtil::Compiler_Error(file_name));
                     break;
                 case -4:
-                    FileUtil::ReadFile(PathUtil::Stderr(file_name), &desc);
+                    desc = FileUtil::ReadFile(PathUtil::Stderr(file_name));
                     break;
                 case SIGABRT:
                     desc = "内存超过范围";
@@ -80,6 +80,8 @@ namespace NS_COMPILE_AND_RUN_MODULE
          * 输入
          * code：用户提交的代码
          * input：用户给的自定义输入，不做处理
+         * cpu_limit: cpu时间限制
+         * mem_limit: 内存限制
          *
          * 输出
          * status：状态码
@@ -132,12 +134,10 @@ namespace NS_COMPILE_AND_RUN_MODULE
             {
                 status = -1;
                 LOG(ERROR) << "运行出现内部错误";
-                goto END;
             }
             else if(run_result > 0)
             {
                 status = run_result;
-                goto END;
             }
             else
             {
@@ -152,8 +152,8 @@ END:
             {
                 std::string _stdout;
                 std::string _stderr;
-                FileUtil::ReadFile(PathUtil::Stdout(file_name), &_stdout);
-                FileUtil::ReadFile(PathUtil::Stderr(file_name), &_stderr);
+                _stdout = FileUtil::ReadFile(PathUtil::Stdout(file_name));
+                _stderr = FileUtil::ReadFile(PathUtil::Stderr(file_name));
                 out_value["stdout"] = _stdout;
                 out_value["stderr"] = _stderr;
             }
